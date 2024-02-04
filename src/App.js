@@ -9,7 +9,7 @@ function App() {
   useEffect(() => {
     const fetchPRData = async () => {
       try {
-        const token = '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';
+        const token = process.env.REACT_APP_GITHUB_TOKEN;
         const config = {
           headers: {
             Authorization: `token ${token}`
