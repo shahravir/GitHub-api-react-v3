@@ -9,7 +9,7 @@ function App() {
   useEffect(() => {
     const fetchPRData = async () => {
       try {
-        const token = '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';
+        const token = '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';
         const config = {
           headers: {
             Authorization: `token ${token}`
@@ -17,7 +17,7 @@ function App() {
         };
 
         const response = await axios.get(
-          'https://api.github.com/repos/allenai/OLMo/pulls?state=all',
+          'https://api.github.com/repos/ohmyzsh/ohmyzsh/pulls?state=all&per_page=100',
           config
         );
         const prsWithComments = await Promise.all(response.data.map(async pr => {
@@ -34,6 +34,10 @@ function App() {
     fetchPRData();
   }, []);
 
+  const handleSearchChange = event => {
+    setSearchQuery(event.target.value);
+  };
+
   const filteredPRData = prData.filter(pr => {
     const lowerCaseQuery = searchQuery.toLowerCase();
     return (
@@ -44,17 +48,36 @@ function App() {
     );
   });
 
+  // Calculate interesting PR stats
+  const totalPRs = prData.length;
+  const openPRs = prData.filter(pr => !pr.merged_at && !pr.closed_at).length;
+  const mergedPRs = prData.filter(pr => pr.merged_at).length;
+  const closedPRs = prData.filter(pr => pr.closed_at && !pr.merged_at).length;
+
+  const totalAge = prData.reduce((total, pr) => {
+    return total + calculateAge(pr.created_at, pr.merged_at, pr.closed_at);
+  }, 0);
+
+  const averageAge = totalAge / totalPRs;
+
   return (
     <div className="App">
-      <h1>Banking App PR Stats</h1>
-      <div className='search-container'>
-      <input
-        type="text"
-        className='search-input'
-        placeholder="Search by PR Number, User, Title, or Comment"
-        value={searchQuery}
-        onChange={e => setSearchQuery(e.target.value)}
-      />
+      <h1>PR Stats for ohmyzsh</h1>
+      <div className="stats">
+        <p>Total PRs: {totalPRs}</p>
+        <p>Open PRs: {openPRs}</p>
+        <p>Merged PRs: {mergedPRs}</p>
+        <p>Closed PRs: {closedPRs}</p>
+        <p>Average Age of PRs: {averageAge.toFixed(2)} days</p>
+      </div>
+      <div className="search-container">
+        <input
+          type="text"
+          className="search-input"
+          placeholder="Search by PR Number, User, Title, or Comment"
+          value={searchQuery}
+          onChange={handleSearchChange}
+        />
       </div>
       <table>
         <thead>
@@ -113,7 +136,7 @@ function calculateAge(created_at, merged_at, closed_at) {
   const createdDate = new Date(created_at);
   const ageInMilliseconds = endDate - createdDate;
   const ageInDays = ageInMilliseconds / (1000 * 60 * 60 * 24);
-  return Math.round(ageInDays) + ' days';
+  return Math.round(ageInDays);
 }
 
 export default App;
